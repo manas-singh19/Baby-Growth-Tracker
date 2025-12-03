@@ -213,17 +213,19 @@ export default function MeasurementForm({
                                 <View style={styles.modalOverlay}>
                                     <View style={styles.modalContent}>
                                         <Text style={styles.modalTitle}>Select Date</Text>
-                                        <DateTimePicker
-                                            value={tempDate}
-                                            mode="date"
-                                            display="spinner"
-                                            onChange={(event, selectedDate) => {
-                                                if (selectedDate) setTempDate(selectedDate);
-                                            }}
-                                            maximumDate={new Date()}
-                                            minimumDate={new Date(profile.birthDate)}
-                                            textColor={colors.text}
-                                        />
+                                        <View style={styles.pickerContainer}>
+                                            <DateTimePicker
+                                                value={tempDate}
+                                                mode="date"
+                                                display="spinner"
+                                                onChange={(event, selectedDate) => {
+                                                    if (selectedDate) setTempDate(selectedDate);
+                                                }}
+                                                maximumDate={new Date()}
+                                                themeVariant="dark"
+                                                style={styles.picker}
+                                            />
+                                        </View>
                                         <View style={styles.modalButtons}>
                                             <TouchableOpacity
                                                 style={[styles.modalButton, styles.modalCancelButton]}
@@ -464,6 +466,13 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         width: '85%',
         maxWidth: 400,
+    },
+    pickerContainer: {
+        overflow: 'hidden',
+    },
+    picker: {
+        height: 200,
+        marginHorizontal: -22,
     },
     modalTitle: {
         ...typography.h3,
