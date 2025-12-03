@@ -52,7 +52,7 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
     // We'll show the 50th percentile and baby's measurements
     const maxAge = Math.max(...curves[0].data.map(d => d.age), ...measurementData.map(d => d.x));
     const labels = [];
-    const step = Math.ceil(maxAge / 8); // Show ~8 labels
+    const step = Math.ceil(maxAge / 5); // Show ~5 labels to avoid overlap
 
     for (let i = 0; i <= maxAge; i += step) {
         labels.push(Math.round(i / 30.4375).toString()); // Convert to months
@@ -61,14 +61,26 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
     // Get 50th percentile data
     const p50Data = curves.find(c => c.percentile === 50)?.data || [];
 
-    // Prepare datasets
-    const datasets = [
-        {
-            data: p50Data.map(d => d.value),
-            color: () => colors.chartPercentile50,
-            strokeWidth: 2,
-        },
-    ];
+    // Prepare datasets - all percentile curves
+    const percentileColors: Record<number, string> = {
+        3: colors.chartPercentile3,
+        10: colors.chartPercentile10,
+        25: colors.chartPercentile25,
+        50: colors.chartPercentile50,
+        75: colors.chartPercentile75,
+        90: colors.chartPercentile90,
+        97: colors.chartPercentile97,
+    };
+
+    const datasets = PERCENTILES.map(p => {
+        const curveData = curves.find(c => c.percentile === p)?.data || [];
+        return {
+            data: curveData.map(d => d.value),
+            color: () => percentileColors[p],
+            strokeWidth: p === 50 ? 2.5 : 1.5,
+            withDots: false,
+        };
+    });
 
     // Add baby's measurements if available
     if (measurementData.length > 0) {
@@ -87,9 +99,10 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
 
         if (babyDataPoints.length > 0) {
             datasets.push({
-                data: babyDataPoints.length > 0 ? babyDataPoints : [0],
+                data: babyDataPoints,
                 color: () => colors.accent,
                 strokeWidth: 3,
+                withDots: true,
             });
         }
     }
@@ -110,41 +123,52 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
                     width={chartWidth}
                     height={chartHeight}
                     chartConfig={{
-                        backgroundColor: colors.surface,
-                        backgroundGradientFrom: colors.surface,
-                        backgroundGradientTo: colors.surfaceLight,
+                          backgroundColor: '#1E293B',
+                        backgroundGradientFrom: '#1E293B',
+                        backgroundGradientTo: '#1E293B',
                         decimalPlaces: 1,
                         color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(203, 213, 225, ${opacity})`,
+                        labelColor: (opacity = 1) => `rgba(241, 245, 249, ${opacity})`,
                         style: {
                             borderRadius: borderRadius.lg,
                         },
                         propsForDots: {
-                            r: '4',
-                            strokeWidth: '2',
+                            r: '3',
+                            strokeWidth: '0.8',
                             stroke: colors.accentLight,
                         },
+                        propsForBackgroundLines: {
+                            strokeDasharray: '0.3',
+                            stroke: colors.chartGrid,
+                            strokeWidth: 1,
+                        },
                     }}
-                    bezier
+                    bezier={false}
                     style={styles.chart}
                     yAxisLabel=""
                     yAxisSuffix=""
-                    xAxisLabel="Age (months)"
+                    withHorizontalLabels={true}
+                    withVerticalLabels={true}
+                    fromZero={false}
+                    segments={8}
                 />
+                <Text style={styles.xAxisLabel}>Age (months)</Text>
             </View>
 
             {/* Legend */}
             <View style={styles.legend}>
-                <Text style={styles.legendTitle}>Chart Information</Text>
+                <Text style={styles.legendTitle}>WHO Percentile Curves</Text>
                 <View style={styles.legendItems}>
-                    <View style={styles.legendItem}>
-                        <View style={[styles.legendLine, { backgroundColor: colors.chartPercentile50 }]} />
-                        <Text style={styles.legendText}>50th Percentile (WHO)</Text>
-                    </View>
+                    {PERCENTILES.map(p => (
+                        <View key={p} style={styles.legendItem}>
+                            <View style={[styles.legendLine, { backgroundColor: percentileColors[p], height: p === 50 ? 3 : 2 }]} />
+                            <Text style={[styles.legendText, p === 50 && styles.legendTextBold]}>{p}th</Text>
+                        </View>
+                    ))}
                     {measurementData.length > 0 && (
                         <View style={styles.legendItem}>
-                            <View style={[styles.legendLine, { backgroundColor: colors.accent }]} />
-                            <Text style={styles.legendText}>Baby's Growth</Text>
+                            <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
+                            <Text style={[styles.legendText, styles.legendTextBold]}>Baby's Growth</Text>
                         </View>
                     )}
                 </View>
@@ -209,12 +233,22 @@ const styles = StyleSheet.create({
     chartContainer: {
         backgroundColor: colors.surface,
         borderRadius: borderRadius.lg,
-        padding: spacing.sm,
+        padding: spacing.md,
+        paddingBottom: spacing.md,
         marginBottom: spacing.md,
         alignItems: 'center',
+        justifyContent: 'center',
+        overflow:'hidden'
     },
     chart: {
         borderRadius: borderRadius.lg,
+        marginLeft: -20, // Compensate for Y-axis labels to center the chart
+    },
+    xAxisLabel: {
+        ...typography.caption,
+        color: colors.textMuted,
+        textAlign: 'center',
+        marginTop: spacing.xs,
     },
     legend: {
         backgroundColor: colors.surface,
@@ -229,22 +263,34 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     legendItems: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: spacing.sm,
         marginBottom: spacing.sm,
     },
     legendItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
+        gap: spacing.xs,
+        marginRight: spacing.sm,
     },
     legendLine: {
-        width: 24,
-        height: 3,
-        borderRadius: 2,
+        width: 20,
+        height: 2,
+        borderRadius: 1,
+    },
+    legendDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
     },
     legendText: {
-        ...typography.bodySmall,
+        ...typography.caption,
         color: colors.textMuted,
+    },
+    legendTextBold: {
+        fontWeight: '600',
+        color: colors.textSecondary,
     },
     legendNote: {
         ...typography.caption,

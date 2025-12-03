@@ -136,12 +136,15 @@ export default function MeasurementForm({
     };
 
     const validateWeight = (value: string) => {
+        if (!value || value.trim() === '') return 'Weight is required';
+        
         const num = parseFloat(value);
-        if (isNaN(num)) return 'Weight is required';
-        if (num <= 0) return 'Weight must be positive';
+        if (isNaN(num)) return 'Please enter a valid number';
+        if (num <= 0) return 'Weight must be greater than 0';
 
         const kg = weightUnit === 'kg' ? num : lbToKg(num);
-        if (kg < 1 || kg > 30) return 'Weight seems unrealistic (1-30 kg)';
+        if (kg < 0.5) return `Weight too low (minimum 0.5 kg / ${kgToLb(0.5).toFixed(1)} lb)`;
+        if (kg > 30) return `Weight too high (maximum 30 kg / ${kgToLb(30).toFixed(1)} lb)`;
 
         return true;
     };
@@ -172,8 +175,11 @@ export default function MeasurementForm({
         if (!value) return 'Date is required';
 
         const dateStr = value + 'T00:00:00.000Z';
-        if (!isValidMeasurementDate(dateStr, profile.birthDate)) {
-            return 'Date must be between birth date and today';
+        const today = new Date();
+        const selectedDate = new Date(dateStr);
+        
+        if (selectedDate > today) {
+            return 'Date cannot be in the future';
         }
 
         return true;

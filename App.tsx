@@ -5,12 +5,12 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   ActivityIndicator,
   Alert,
   Animated,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { BabyProfile, GrowthMeasurement, MeasurementType } from './src/types';
 import { loadData, deleteMeasurement as deleteMeasurementFromStorage, generateSampleData } from './src/services/storage';
 import MeasurementForm from './src/components/MeasurementForm';
@@ -18,7 +18,7 @@ import GrowthChart from './src/components/GrowthChart';
 import HistoryList from './src/components/HistoryList';
 import { colors, spacing, typography, borderRadius, shadows } from './src/theme';
 
-type Screen = 'charts' | 'history' | 'add' | 'edit';
+type Screen = 'charts' | 'history' | 'add' | 'edit' | 'profile';
 
 export default function App() {
   const [profile, setProfile] = useState<BabyProfile | null>(null);
@@ -127,12 +127,12 @@ export default function App() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <View>
+      <TouchableOpacity onPress={() => setCurrentScreen('profile')}>
         <Text style={styles.headerTitle}>{profile.name}'s Growth</Text>
         <Text style={styles.headerSubtitle}>
           {profile.gender === 'male' ? '👶 Boy' : '👶 Girl'} • WHO Standards
         </Text>
-      </View>
+      </TouchableOpacity>
       {currentScreen === 'charts' && measurements.length === 0 && (
         <TouchableOpacity
           style={styles.sampleButton}
@@ -250,9 +250,77 @@ export default function App() {
     />
   );
 
+  const handleResetData = () => {
+    Alert.alert(
+      'Reset All Data',
+      'This will delete all measurements and reset the app. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { clearAllData } = await import('./src/services/storage');
+              await clearAllData();
+              await loadAppData();
+              setCurrentScreen('charts');
+              Alert.alert('Success', 'All data has been reset');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset data');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const renderProfileScreen = () => (
+    <ScrollView style={styles.scrollView}>
+      <View style={styles.profileContainer}>
+        <Text style={styles.profileTitle}>Baby Profile</Text>
+        
+        <View style={styles.profileItem}>
+          <Text style={styles.profileLabel}>Name</Text>
+          <Text style={styles.profileValue}>{profile.name}</Text>
+        </View>
+
+        <View style={styles.profileItem}>
+          <Text style={styles.profileLabel}>Gender</Text>
+          <Text style={styles.profileValue}>{profile.gender === 'male' ? '👶 Boy' : '👶 Girl'}</Text>
+        </View>
+
+        <View style={styles.profileItem}>
+          <Text style={styles.profileLabel}>Birth Date</Text>
+          <Text style={styles.profileValue}>{new Date(profile.birthDate).toLocaleDateString()}</Text>
+        </View>
+
+        <View style={styles.profileItem}>
+          <Text style={styles.profileLabel}>Total Measurements</Text>
+          <Text style={styles.profileValue}>{measurements.length}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={handleResetData}
+        >
+          <Text style={styles.resetButtonText}>🗑️ Reset All Data</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setCurrentScreen('charts')}
+        >
+          <Text style={styles.backButtonText}>← Back to Charts</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
       {renderHeader()}
 
@@ -261,7 +329,9 @@ export default function App() {
       {currentScreen === 'charts' && renderChartsScreen()}
       {currentScreen === 'history' && renderHistoryScreen()}
       {(currentScreen === 'add' || currentScreen === 'edit') && renderFormScreen()}
-    </SafeAreaView>
+      {currentScreen === 'profile' && renderProfileScreen()}
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
@@ -406,5 +476,50 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: colors.text,
     fontWeight: '300',
+  },
+  profileContainer: {
+    padding: spacing.lg,
+  },
+  profileTitle: {
+    ...typography.h1,
+    color: colors.text,
+    marginBottom: spacing.xl,
+  },
+  profileItem: {
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  profileLabel: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+  },
+  profileValue: {
+    ...typography.h3,
+    color: colors.text,
+  },
+  resetButton: {
+    backgroundColor: colors.error,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginTop: spacing.xl,
+  },
+  resetButtonText: {
+    ...typography.button,
+    color: colors.text,
+  },
+  backButton: {
+    backgroundColor: colors.primary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  backButtonText: {
+    ...typography.button,
+    color: colors.text,
   },
 });

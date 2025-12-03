@@ -5,13 +5,14 @@ A production-quality React Native app for tracking baby growth measurements agai
 ## 📱 Features
 
 - **Growth Measurement Tracking**: Log weight, height/length, and head circumference
-- **WHO Percentile Charts**: Visualize growth against WHO Child Growth Standards (0-24 months)
-- **Unit Conversion**: Support for both metric (kg, cm) and imperial (lb, in) units
-- **Data Persistence**: Local storage with AsyncStorage
+- **WHO Percentile Charts**: Visualize growth against WHO Child Growth Standards (0-24 months) with all 7 percentile curves (3rd, 10th, 25th, 50th, 75th, 90th, 97th)
+- **Unit Conversion**: Support for both metric (kg, cm) and imperial (lb, in) units with real-time conversion
+- **Data Persistence**: Local storage with AsyncStorage and schema versioning
 - **Form Validation**: Comprehensive validation with helpful error messages
-- **History View**: Chronological list of all measurements with percentiles
-- **Edit/Delete**: Modify or remove existing measurements
+- **History View**: Chronological list of all measurements with calculated percentiles
+- **Edit/Delete**: Modify or remove existing measurements with confirmation
 - **Responsive Design**: Beautiful, modern UI with smooth animations
+- **Gender-Specific**: Uses gender-specific WHO growth standards for accurate percentile calculations
 
 ## 🚀 Setup & Installation
 
@@ -76,10 +77,12 @@ A production-quality React Native app for tracking baby growth measurements agai
 - **Framework**: React Native with Expo SDK 54
 - **Language**: TypeScript
 - **State Management**: React Hooks (useState, useEffect)
-- **Forms**: react-hook-form
-- **Charts**: react-native-chart-kit
-- **Storage**: @react-native-async-storage/async-storage
-- **Date Handling**: dayjs
+- **Forms**: react-hook-form with comprehensive validation
+- **Charts**: react-native-chart-kit (chosen for simplicity, good performance, and built-in support for multiple datasets)
+- **Storage**: @react-native-async-storage/async-storage with graceful error handling
+- **Date Handling**: dayjs (explicit UTC timezone handling)
+- **Linting**: ESLint + Prettier
+- **Testing**: Jest for unit tests
 
 ### Project Structure
 
@@ -221,19 +224,31 @@ npm test
 - **Length**: Rounded to 1 decimal place (cm), 2 decimal places (in)
 - **Storage**: Always in SI units (kg, cm)
 
+### Duplication Rule
+
+**Design Decision**: The app **allows multiple measurements per day** without warnings.
+
+**Rationale**:
+- Parents may want to track measurements at different times of day (morning vs evening weight)
+- Doctor visits may occur on the same day as home measurements
+- Flexibility is prioritized over strict enforcement
+- Each measurement has a unique ID and timestamp for proper tracking
+
+**Alternative Considered**: Preventing duplicates or showing warnings was considered but rejected to avoid limiting legitimate use cases.
+
 ## 🚧 Known Limitations & Future Improvements
 
 ### Current Limitations
 
 1. **Single baby profile**: Only one baby can be tracked at a time
 2. **Age range**: WHO data limited to 0-24 months
-3. **Chart library**: Simplified visualization (50th percentile only)
-4. **Offline only**: No cloud sync or backup
+3. **Offline only**: No cloud sync or backup
+4. **Chart interactivity**: Limited tap interactions on chart points (library limitation)
 
 ### Planned Improvements
 
 1. **Multiple profiles**: Support for tracking multiple children
-2. **All percentile curves**: Display 3rd, 10th, 25th, 50th, 75th, 90th, 97th percentiles
+2. **Enhanced chart library**: Consider Victory Native for better interactivity
 3. **Export data**: CSV/PDF export for sharing with pediatrician
 4. **Reminders**: Notifications for upcoming checkups
 5. **Growth velocity**: Calculate and display growth rate
