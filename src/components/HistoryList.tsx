@@ -114,6 +114,7 @@ export default function HistoryList({
       contentContainerStyle={styles.listContainer}
       ListEmptyComponent={renderEmpty}
       showsVerticalScrollIndicator={false}
+      ListFooterComponent={<View style={{ height: 80 }} />}
     />
   );
 }

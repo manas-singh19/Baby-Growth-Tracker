@@ -230,6 +230,7 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
                 </TouchableOpacity>
               );
             })}
+          <View style={{ height: 80 }} />
         </View>
       )}
     </ScrollView>

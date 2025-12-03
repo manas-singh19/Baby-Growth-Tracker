@@ -190,9 +190,14 @@ export default function MeasurementForm({
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
-      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.header}>
           <Text style={styles.title}>
             {existingMeasurement ? 'Edit Measurement' : 'Add Measurement'}
@@ -386,6 +391,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   header: {
     marginBottom: spacing.lg,
