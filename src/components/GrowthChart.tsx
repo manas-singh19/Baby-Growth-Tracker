@@ -34,15 +34,16 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
 
     // Get chart title and axis labels
     const getTitle = () => {
-        if (type === 'weight') return 'Weight-for-Age';
-        if (type === 'height') return 'Length/Height-for-Age';
-        return 'Head Circumference-for-Age';
+        if (type === 'weight') return 'Weight For Age';
+        if (type === 'height') return 'Length/Height For Age';
+        return 'Head Circumference For Age';
     };
 
     const getYAxisLabel = () => {
         if (type === 'weight') return unit === 'kg' ? 'Weight (kg)' : 'Weight (lb)';
         return unit === 'cm' ? 'Length (cm)' : 'Length (in)';
     };
+    
 
     const screenWidth = Dimensions.get('window').width;
     const chartWidth = screenWidth - spacing.md * 2;
@@ -121,11 +122,12 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
                 <LineChart
                     data={chartData}
                     width={chartWidth}
-                    height={chartHeight}
+                    height={chartHeight} 
                     chartConfig={{
-                          backgroundColor: '#1E293B',
+                        backgroundColor: '#1E293B',
                         backgroundGradientFrom: '#1E293B',
                         backgroundGradientTo: '#1E293B',
+                        
                         decimalPlaces: 1,
                         color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
                         labelColor: (opacity = 1) => `rgba(241, 245, 249, ${opacity})`,
@@ -144,15 +146,17 @@ export default function GrowthChart({ measurements, gender, type, unit }: Growth
                         },
                     }}
                     bezier={false}
-                    style={styles.chart}
-                    yAxisLabel=""
-                    yAxisSuffix=""
+                    style={styles.chart}  
                     withHorizontalLabels={true}
                     withVerticalLabels={true}
                     fromZero={false}
                     segments={8}
+                     
                 />
-                <Text style={styles.xAxisLabel}>Age (months)</Text>
+                <View style={styles.chartDetails}>
+                    <Text style={styles.xAxisLabel}>↑ {getYAxisLabel()}</Text>
+                    <Text style={styles.xAxisLabel}>→ Age (months)</Text>
+                </View>  
             </View>
 
             {/* Legend */}
@@ -234,7 +238,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderRadius: borderRadius.lg,
         padding: spacing.md,
-        paddingBottom: spacing.md,
+        paddingBottom: spacing.xs,
         marginBottom: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
@@ -249,6 +253,15 @@ const styles = StyleSheet.create({
         color: colors.textMuted,
         textAlign: 'center',
         marginTop: spacing.xs,
+        
+    },
+    chartDetails:{
+        flexDirection:'row',
+        justifyContent:'space-around',
+        width:'100%',
+        paddingHorizontal:spacing.md,
+        position:'absolute',
+        bottom:8
     },
     legend: {
         backgroundColor: colors.surface,

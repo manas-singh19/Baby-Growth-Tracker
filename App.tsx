@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  StatusBar,
   ActivityIndicator,
   Alert,
   Animated,
 } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { BabyProfile, GrowthMeasurement, MeasurementType } from './src/types';
 import { loadData, deleteMeasurement as deleteMeasurementFromStorage, generateSampleData } from './src/services/storage';
 import MeasurementForm from './src/components/MeasurementForm';
@@ -20,7 +20,9 @@ import { colors, spacing, typography, borderRadius, shadows } from './src/theme'
 
 type Screen = 'charts' | 'history' | 'add' | 'edit' | 'profile';
 
-export default function App() {
+function AppContent() {
+  const insets = useSafeAreaInsets();
+
   const [profile, setProfile] = useState<BabyProfile | null>(null);
   const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,35 +58,35 @@ export default function App() {
     }
   };
 
-  const handleAddMeasurement = () => {
+  const handleAddMeasurement = useCallback(() => {
     setSelectedMeasurement(null);
     setCurrentScreen('add');
-  };
+  }, []);
 
-  const handleEditMeasurement = (measurement: GrowthMeasurement) => {
+  const handleEditMeasurement = useCallback((measurement: GrowthMeasurement) => {
     setSelectedMeasurement(measurement);
     setCurrentScreen('edit');
-  };
+  }, []);
 
-  const handleDeleteMeasurement = async (id: string) => {
+  const handleDeleteMeasurement = useCallback(async (id: string) => {
     try {
       await deleteMeasurementFromStorage(id);
       await loadAppData();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete measurement.');
     }
-  };
+  }, []);
 
-  const handleFormSuccess = async () => {
+  const handleFormSuccess = useCallback(async () => {
     await loadAppData();
     setCurrentScreen('charts');
     setSelectedMeasurement(null);
-  };
+  }, []);
 
-  const handleFormCancel = () => {
+  const handleFormCancel = useCallback(() => {
     setCurrentScreen('charts');
     setSelectedMeasurement(null);
-  };
+  }, []);
 
   const handleGenerateSampleData = () => {
     Alert.alert(
@@ -318,9 +320,12 @@ export default function App() {
   );
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-        <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    <>
+      <StatusBar style="light" /> 
+      <View style={{height: insets.top, backgroundColor: colors.surface}}/>
+
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+        
 
       {renderHeader()}
 
@@ -331,6 +336,14 @@ export default function App() {
       {(currentScreen === 'add' || currentScreen === 'edit') && renderFormScreen()}
       {currentScreen === 'profile' && renderProfileScreen()}
       </SafeAreaView>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppContent />
     </SafeAreaProvider>
   );
 }
@@ -338,7 +351,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background, // This colors the status bar area
   },
   loadingContainer: {
     flex: 1,
@@ -360,9 +373,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
-    paddingTop: spacing.lg,
+    // paddingTop: spacing.lg,
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.8,
     borderBottomColor: colors.surfaceLight,
   },
   headerTitle: {
