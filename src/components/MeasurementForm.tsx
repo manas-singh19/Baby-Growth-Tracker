@@ -10,6 +10,8 @@ import {
     ActivityIndicator,
     Platform,
     Modal,
+    KeyboardAvoidingView,
+    Keyboard,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useForm, Controller } from 'react-hook-form';
@@ -178,7 +180,11 @@ export default function MeasurementForm({
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <KeyboardAvoidingView 
+            style={styles.container} 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.contentContainer}>
             <View style={styles.header}>
                 <Text style={styles.title}>
                     {existingMeasurement ? 'Edit Measurement' : 'Add Measurement'}
@@ -273,6 +279,8 @@ export default function MeasurementForm({
                             placeholder={`Enter weight in ${weightUnit}`}
                             placeholderTextColor={colors.textMuted}
                             keyboardType="decimal-pad"
+                            returnKeyType="done"
+                            onSubmitEditing={Keyboard.dismiss}
                         />
                     )}
                 />
@@ -299,6 +307,8 @@ export default function MeasurementForm({
                             placeholder={`Enter height in ${lengthUnit}`}
                             placeholderTextColor={colors.textMuted}
                             keyboardType="decimal-pad"
+                            returnKeyType="done"
+                            onSubmitEditing={Keyboard.dismiss}
                         />
                     )}
                 />
@@ -323,6 +333,8 @@ export default function MeasurementForm({
                             placeholder={`Enter head circumference in ${lengthUnit}`}
                             placeholderTextColor={colors.textMuted}
                             keyboardType="decimal-pad"
+                            returnKeyType="done"
+                            onSubmitEditing={Keyboard.dismiss}
                         />
                     )}
                 />
@@ -353,7 +365,8 @@ export default function MeasurementForm({
                     )}
                 </TouchableOpacity>
             </View>
-        </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
@@ -361,6 +374,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
+    },
+    scrollContainer: {
+        flex: 1,
     },
     contentContainer: {
         padding: spacing.md,
@@ -406,10 +422,13 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderRadius: borderRadius.md,
         padding: spacing.md,
-        ...typography.body,
+        fontSize: typography.body.fontSize,
+        fontWeight: typography.body.fontWeight,
         color: colors.text,
         borderWidth: 2,
         borderColor: 'transparent',
+        height: 56,
+        includeFontPadding: false,
     },
     dateInput: {
         justifyContent: 'center',
