@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,7 +12,11 @@ import {
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { BabyProfile, GrowthMeasurement, MeasurementType } from './src/types';
-import { loadData, deleteMeasurement as deleteMeasurementFromStorage, generateSampleData } from './src/services/storage';
+import {
+  loadData,
+  deleteMeasurement as deleteMeasurementFromStorage,
+  generateSampleData,
+} from './src/services/storage';
 import MeasurementForm from './src/components/MeasurementForm';
 import GrowthChart from './src/components/GrowthChart';
 import HistoryList from './src/components/HistoryList';
@@ -29,21 +33,29 @@ function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('charts');
   const [selectedMeasurement, setSelectedMeasurement] = useState<GrowthMeasurement | null>(null);
   const [chartType, setChartType] = useState<MeasurementType>('weight');
-  const [weightUnit, setWeightUnit] = useState<'kg' | 'lb'>('kg');
-  const [lengthUnit, setLengthUnit] = useState<'cm' | 'in'>('cm');
+  const [weightUnit] = useState<'kg' | 'lb'>('kg');
+  const [lengthUnit] = useState<'cm' | 'in'>('cm');
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(300));
 
   useEffect(() => {
     loadAppData();
   }, []);
 
   useEffect(() => {
-    // Fade in animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [currentScreen]);
 
   const loadAppData = async () => {
@@ -51,7 +63,7 @@ function AppContent() {
       const data = await loadData();
       setProfile(data.profile);
       setMeasurements(data.measurements);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to load data. Please restart the app.');
     } finally {
       setLoading(false);
@@ -72,7 +84,7 @@ function AppContent() {
     try {
       await deleteMeasurementFromStorage(id);
       await loadAppData();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to delete measurement.');
     }
   }, []);
@@ -101,7 +113,7 @@ function AppContent() {
               await generateSampleData(20);
               await loadAppData();
               Alert.alert('Success', 'Sample data generated!');
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to generate sample data.');
             }
           },
@@ -130,16 +142,13 @@ function AppContent() {
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => setCurrentScreen('profile')}>
-        <Text style={styles.headerTitle}>{profile.name}'s Growth</Text>
+        <Text style={styles.headerTitle}>{profile.name}&apos;s Growth</Text>
         <Text style={styles.headerSubtitle}>
           {profile.gender === 'male' ? '👶 Boy' : '👶 Girl'} • WHO Standards
         </Text>
       </TouchableOpacity>
       {currentScreen === 'charts' && measurements.length === 0 && (
-        <TouchableOpacity
-          style={styles.sampleButton}
-          onPress={handleGenerateSampleData}
-        >
+        <TouchableOpacity style={styles.sampleButton} onPress={handleGenerateSampleData}>
           <Text style={styles.sampleButtonText}>📊 Demo</Text>
         </TouchableOpacity>
       )}
@@ -215,7 +224,7 @@ function AppContent() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateTitle}>No Measurements Yet</Text>
             <Text style={styles.emptyStateText}>
-              Start tracking your baby's growth by adding the first measurement.
+              Start tracking your baby&apos;s growth by adding the first measurement.
             </Text>
           </View>
         )}
@@ -244,12 +253,22 @@ function AppContent() {
   );
 
   const renderFormScreen = () => (
-    <MeasurementForm
-      profile={profile}
-      existingMeasurement={selectedMeasurement || undefined}
-      onSuccess={handleFormSuccess}
-      onCancel={handleFormCancel}
-    />
+    <Animated.View
+      style={[
+        styles.screenContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <MeasurementForm
+        profile={profile}
+        existingMeasurement={selectedMeasurement || undefined}
+        onSuccess={handleFormSuccess}
+        onCancel={handleFormCancel}
+      />
+    </Animated.View>
   );
 
   const handleResetData = () => {
@@ -268,7 +287,7 @@ function AppContent() {
               await loadAppData();
               setCurrentScreen('charts');
               Alert.alert('Success', 'All data has been reset');
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to reset data');
             }
           },
@@ -281,7 +300,7 @@ function AppContent() {
     <ScrollView style={styles.scrollView}>
       <View style={styles.profileContainer}>
         <Text style={styles.profileTitle}>Baby Profile</Text>
-        
+
         <View style={styles.profileItem}>
           <Text style={styles.profileLabel}>Name</Text>
           <Text style={styles.profileValue}>{profile.name}</Text>
@@ -289,12 +308,16 @@ function AppContent() {
 
         <View style={styles.profileItem}>
           <Text style={styles.profileLabel}>Gender</Text>
-          <Text style={styles.profileValue}>{profile.gender === 'male' ? '👶 Boy' : '👶 Girl'}</Text>
+          <Text style={styles.profileValue}>
+            {profile.gender === 'male' ? '👶 Boy' : '👶 Girl'}
+          </Text>
         </View>
 
         <View style={styles.profileItem}>
           <Text style={styles.profileLabel}>Birth Date</Text>
-          <Text style={styles.profileValue}>{new Date(profile.birthDate).toLocaleDateString()}</Text>
+          <Text style={styles.profileValue}>
+            {new Date(profile.birthDate).toLocaleDateString()}
+          </Text>
         </View>
 
         <View style={styles.profileItem}>
@@ -302,17 +325,11 @@ function AppContent() {
           <Text style={styles.profileValue}>{measurements.length}</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={handleResetData}
-        >
+        <TouchableOpacity style={styles.resetButton} onPress={handleResetData}>
           <Text style={styles.resetButtonText}>🗑️ Reset All Data</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => setCurrentScreen('charts')}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => setCurrentScreen('charts')}>
           <Text style={styles.backButtonText}>← Back to Charts</Text>
         </TouchableOpacity>
       </View>
@@ -321,20 +338,18 @@ function AppContent() {
 
   return (
     <>
-      <StatusBar style="light" /> 
-      <View style={{height: insets.top, backgroundColor: colors.surface}}/>
+      <StatusBar style="light" />
+      <View style={{ height: insets.top, backgroundColor: colors.surface }} />
 
       <SafeAreaView style={styles.container} edges={['left', 'right']}>
-        
+        {renderHeader()}
 
-      {renderHeader()}
+        {(currentScreen === 'charts' || currentScreen === 'history') && renderTabBar()}
 
-      {(currentScreen === 'charts' || currentScreen === 'history') && renderTabBar()}
-
-      {currentScreen === 'charts' && renderChartsScreen()}
-      {currentScreen === 'history' && renderHistoryScreen()}
-      {(currentScreen === 'add' || currentScreen === 'edit') && renderFormScreen()}
-      {currentScreen === 'profile' && renderProfileScreen()}
+        {currentScreen === 'charts' && renderChartsScreen()}
+        {currentScreen === 'history' && renderHistoryScreen()}
+        {(currentScreen === 'add' || currentScreen === 'edit') && renderFormScreen()}
+        {currentScreen === 'profile' && renderProfileScreen()}
       </SafeAreaView>
     </>
   );

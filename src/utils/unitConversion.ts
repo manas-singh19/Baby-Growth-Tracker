@@ -14,7 +14,7 @@ const IN_TO_CM = 1 / CM_TO_IN;
  * Rounds to 2 decimal places
  */
 export function kgToLb(kg: number): number {
-    return Math.round(kg * KG_TO_LB * 100) / 100;
+  return Math.round(kg * KG_TO_LB * 100) / 100;
 }
 
 /**
@@ -22,7 +22,7 @@ export function kgToLb(kg: number): number {
  * Rounds to 3 decimal places for storage
  */
 export function lbToKg(lb: number): number {
-    return Math.round(lb * LB_TO_KG * 1000) / 1000;
+  return Math.round(lb * LB_TO_KG * 1000) / 1000;
 }
 
 /**
@@ -30,7 +30,7 @@ export function lbToKg(lb: number): number {
  * Rounds to 2 decimal places
  */
 export function cmToIn(cm: number): number {
-    return Math.round(cm * CM_TO_IN * 100) / 100;
+  return Math.round(cm * CM_TO_IN * 100) / 100;
 }
 
 /**
@@ -38,25 +38,25 @@ export function cmToIn(cm: number): number {
  * Rounds to 2 decimal places for storage
  */
 export function inToCm(inches: number): number {
-    return Math.round(inches * IN_TO_CM * 100) / 100;
+  return Math.round(inches * IN_TO_CM * 100) / 100;
 }
 
 /**
  * Format weight for display
  */
 export function formatWeight(kg: number, unit: 'kg' | 'lb'): string {
-    if (unit === 'lb') {
-        return `${kgToLb(kg).toFixed(2)} lb`;
-    }
-    return `${kg.toFixed(2)} kg`;
+  if (unit === 'lb') {
+    return `${kgToLb(kg).toFixed(2)} lb`;
+  }
+  return `${kg.toFixed(2)} kg`;
 }
 
 /**
  * Format length/height for display
  */
 export function formatHeight(cm: number, unit: 'cm' | 'in'): string {
-    if (unit === 'in') {
-        return `${cmToIn(cm).toFixed(2)} in`;
-    }
-    return `${cm.toFixed(1)} cm`;
+  if (unit === 'in') {
+    return `${cmToIn(cm).toFixed(2)} in`;
+  }
+  return `${cm.toFixed(1)} cm`;
 }
