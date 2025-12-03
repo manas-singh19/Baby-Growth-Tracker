@@ -31,6 +31,7 @@ function AppContent() {
   const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('charts');
+  const [previousScreen, setPreviousScreen] = useState<Screen>('charts');
   const [selectedMeasurement, setSelectedMeasurement] = useState<GrowthMeasurement | null>(null);
   const [chartType, setChartType] = useState<MeasurementType>('weight');
   const [weightUnit] = useState<'kg' | 'lb'>('kg');
@@ -77,8 +78,9 @@ function AppContent() {
 
   const handleEditMeasurement = useCallback((measurement: GrowthMeasurement) => {
     setSelectedMeasurement(measurement);
+    setPreviousScreen(currentScreen);
     setCurrentScreen('edit');
-  }, []);
+  }, [currentScreen]);
 
   const handleDeleteMeasurement = useCallback(async (id: string) => {
     try {
@@ -91,14 +93,14 @@ function AppContent() {
 
   const handleFormSuccess = useCallback(async () => {
     await loadAppData();
-    setCurrentScreen('charts');
+    setCurrentScreen(previousScreen);
     setSelectedMeasurement(null);
-  }, []);
+  }, [previousScreen]);
 
   const handleFormCancel = useCallback(() => {
-    setCurrentScreen('charts');
+    setCurrentScreen(previousScreen);
     setSelectedMeasurement(null);
-  }, []);
+  }, [previousScreen]);
 
   const handleGenerateSampleData = () => {
     Alert.alert(
