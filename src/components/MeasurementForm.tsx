@@ -8,7 +8,10 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    Platform,
+    Modal,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useForm, Controller } from 'react-hook-form';
 import { GrowthMeasurement, BabyProfile } from '../types';
 import { colors, spacing, typography, borderRadius, shadows } from '../theme';
@@ -39,6 +42,8 @@ export default function MeasurementForm({
     const [weightUnit, setWeightUnit] = useState<'kg' | 'lb'>('kg');
     const [lengthUnit, setLengthUnit] = useState<'cm' | 'in'>('cm');
     const [loading, setLoading] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [tempDate, setTempDate] = useState<Date>(new Date());
 
     const {
         control,
@@ -188,13 +193,59 @@ export default function MeasurementForm({
                     name="date"
                     rules={{ validate: validateDate }}
                     render={({ field: { onChange, value } }) => (
-                        <TextInput
-                            style={[styles.input, errors.date && styles.inputError]}
-                            value={value}
-                            onChangeText={onChange}
-                            placeholder="YYYY-MM-DD"
-                            placeholderTextColor={colors.textMuted}
-                        />
+                        <>
+                            <TouchableOpacity
+                                style={[styles.input, styles.dateInput, errors.date && styles.inputError]}
+                                onPress={() => {
+                                    setTempDate(new Date(value + 'T00:00:00.000Z'));
+                                    setShowDatePicker(true);
+                                }}
+                            >
+                                <Text style={styles.dateText}>{formatDate(value + 'T00:00:00.000Z')}</Text>
+                            </TouchableOpacity>
+
+                            <Modal
+                                visible={showDatePicker}
+                                transparent
+                                animationType="fade"
+                                onRequestClose={() => setShowDatePicker(false)}
+                            >
+                                <View style={styles.modalOverlay}>
+                                    <View style={styles.modalContent}>
+                                        <Text style={styles.modalTitle}>Select Date</Text>
+                                        <DateTimePicker
+                                            value={tempDate}
+                                            mode="date"
+                                            display="spinner"
+                                            onChange={(event, selectedDate) => {
+                                                if (selectedDate) setTempDate(selectedDate);
+                                            }}
+                                            maximumDate={new Date()}
+                                            minimumDate={new Date(profile.birthDate)}
+                                            textColor={colors.text}
+                                        />
+                                        <View style={styles.modalButtons}>
+                                            <TouchableOpacity
+                                                style={[styles.modalButton, styles.modalCancelButton]}
+                                                onPress={() => setShowDatePicker(false)}
+                                            >
+                                                <Text style={styles.modalCancelText}>Cancel</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.modalButton, styles.modalConfirmButton]}
+                                                onPress={() => {
+                                                    const dateStr = tempDate.toISOString().split('T')[0];
+                                                    onChange(dateStr);
+                                                    setShowDatePicker(false);
+                                                }}
+                                            >
+                                                <Text style={styles.modalConfirmText}>Confirm</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                            </Modal>
+                        </>
                     )}
                 />
                 {errors.date && <Text style={styles.errorText}>{errors.date.message}</Text>}
@@ -358,6 +409,13 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'transparent',
     },
+    dateInput: {
+        justifyContent: 'center',
+    },
+    dateText: {
+        ...typography.body,
+        color: colors.text,
+    },
     inputError: {
         borderColor: colors.error,
     },
@@ -391,6 +449,50 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primary,
     },
     submitButtonText: {
+        ...typography.button,
+        color: colors.text,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.lg,
+        padding: spacing.lg,
+        width: '85%',
+        maxWidth: 400,
+    },
+    modalTitle: {
+        ...typography.h3,
+        color: colors.text,
+        marginBottom: spacing.md,
+        textAlign: 'center',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: spacing.md,
+        marginTop: spacing.md,
+    },
+    modalButton: {
+        flex: 1,
+        padding: spacing.md,
+        borderRadius: borderRadius.md,
+        alignItems: 'center',
+    },
+    modalCancelButton: {
+        backgroundColor: colors.surfaceLight,
+    },
+    modalCancelText: {
+        ...typography.button,
+        color: colors.textSecondary,
+    },
+    modalConfirmButton: {
+        backgroundColor: colors.primary,
+    },
+    modalConfirmText: {
         ...typography.button,
         color: colors.text,
     },
