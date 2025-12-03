@@ -1,0 +1,410 @@
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+  Animated,
+} from 'react-native';
+import { BabyProfile, GrowthMeasurement, MeasurementType } from './src/types';
+import { loadData, deleteMeasurement as deleteMeasurementFromStorage, generateSampleData } from './src/services/storage';
+import MeasurementForm from './src/components/MeasurementForm';
+import GrowthChart from './src/components/GrowthChart';
+import HistoryList from './src/components/HistoryList';
+import { colors, spacing, typography, borderRadius, shadows } from './src/theme';
+
+type Screen = 'charts' | 'history' | 'add' | 'edit';
+
+export default function App() {
+  const [profile, setProfile] = useState<BabyProfile | null>(null);
+  const [measurements, setMeasurements] = useState<GrowthMeasurement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentScreen, setCurrentScreen] = useState<Screen>('charts');
+  const [selectedMeasurement, setSelectedMeasurement] = useState<GrowthMeasurement | null>(null);
+  const [chartType, setChartType] = useState<MeasurementType>('weight');
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lb'>('kg');
+  const [lengthUnit, setLengthUnit] = useState<'cm' | 'in'>('cm');
+  const [fadeAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    loadAppData();
+  }, []);
+
+  useEffect(() => {
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [currentScreen]);
+
+  const loadAppData = async () => {
+    try {
+      const data = await loadData();
+      setProfile(data.profile);
+      setMeasurements(data.measurements);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load data. Please restart the app.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddMeasurement = () => {
+    setSelectedMeasurement(null);
+    setCurrentScreen('add');
+  };
+
+  const handleEditMeasurement = (measurement: GrowthMeasurement) => {
+    setSelectedMeasurement(measurement);
+    setCurrentScreen('edit');
+  };
+
+  const handleDeleteMeasurement = async (id: string) => {
+    try {
+      await deleteMeasurementFromStorage(id);
+      await loadAppData();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete measurement.');
+    }
+  };
+
+  const handleFormSuccess = async () => {
+    await loadAppData();
+    setCurrentScreen('charts');
+    setSelectedMeasurement(null);
+  };
+
+  const handleFormCancel = () => {
+    setCurrentScreen('charts');
+    setSelectedMeasurement(null);
+  };
+
+  const handleGenerateSampleData = () => {
+    Alert.alert(
+      'Generate Sample Data',
+      'This will add 20 sample measurements for testing. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Generate',
+          onPress: async () => {
+            try {
+              await generateSampleData(20);
+              await loadAppData();
+              Alert.alert('Success', 'Sample data generated!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to generate sample data.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Failed to load profile</Text>
+      </View>
+    );
+  }
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View>
+        <Text style={styles.headerTitle}>{profile.name}'s Growth</Text>
+        <Text style={styles.headerSubtitle}>
+          {profile.gender === 'male' ? '👶 Boy' : '👶 Girl'} • WHO Standards
+        </Text>
+      </View>
+      {currentScreen === 'charts' && measurements.length === 0 && (
+        <TouchableOpacity
+          style={styles.sampleButton}
+          onPress={handleGenerateSampleData}
+        >
+          <Text style={styles.sampleButtonText}>📊 Demo</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const renderTabBar = () => (
+    <View style={styles.tabBar}>
+      <TouchableOpacity
+        style={[styles.tab, currentScreen === 'charts' && styles.tabActive]}
+        onPress={() => setCurrentScreen('charts')}
+      >
+        <Text style={[styles.tabText, currentScreen === 'charts' && styles.tabTextActive]}>
+          📈 Charts
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.tab, currentScreen === 'history' && styles.tabActive]}
+        onPress={() => setCurrentScreen('history')}
+      >
+        <Text style={[styles.tabText, currentScreen === 'history' && styles.tabTextActive]}>
+          📋 History
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderChartTypeSelector = () => (
+    <View style={styles.chartTypeSelector}>
+      <TouchableOpacity
+        style={[styles.chartTypeButton, chartType === 'weight' && styles.chartTypeButtonActive]}
+        onPress={() => setChartType('weight')}
+      >
+        <Text style={[styles.chartTypeText, chartType === 'weight' && styles.chartTypeTextActive]}>
+          Weight
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.chartTypeButton, chartType === 'height' && styles.chartTypeButtonActive]}
+        onPress={() => setChartType('height')}
+      >
+        <Text style={[styles.chartTypeText, chartType === 'height' && styles.chartTypeTextActive]}>
+          Height
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.chartTypeButton, chartType === 'head' && styles.chartTypeButtonActive]}
+        onPress={() => setChartType('head')}
+      >
+        <Text style={[styles.chartTypeText, chartType === 'head' && styles.chartTypeTextActive]}>
+          Head
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderChartsScreen = () => (
+    <Animated.View style={[styles.screenContainer, { opacity: fadeAnim }]}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {renderChartTypeSelector()}
+
+        {measurements.length > 0 ? (
+          <GrowthChart
+            measurements={measurements}
+            gender={profile.gender}
+            type={chartType}
+            unit={chartType === 'weight' ? weightUnit : lengthUnit}
+          />
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No Measurements Yet</Text>
+            <Text style={styles.emptyStateText}>
+              Start tracking your baby's growth by adding the first measurement.
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <TouchableOpacity style={styles.fab} onPress={handleAddMeasurement}>
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
+  const renderHistoryScreen = () => (
+    <Animated.View style={[styles.screenContainer, { opacity: fadeAnim }]}>
+      <HistoryList
+        measurements={measurements}
+        onEdit={handleEditMeasurement}
+        onDelete={handleDeleteMeasurement}
+        weightUnit={weightUnit}
+        lengthUnit={lengthUnit}
+      />
+
+      <TouchableOpacity style={styles.fab} onPress={handleAddMeasurement}>
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
+  const renderFormScreen = () => (
+    <MeasurementForm
+      profile={profile}
+      existingMeasurement={selectedMeasurement || undefined}
+      onSuccess={handleFormSuccess}
+      onCancel={handleFormCancel}
+    />
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+
+      {renderHeader()}
+
+      {(currentScreen === 'charts' || currentScreen === 'history') && renderTabBar()}
+
+      {currentScreen === 'charts' && renderChartsScreen()}
+      {currentScreen === 'history' && renderHistoryScreen()}
+      {(currentScreen === 'add' || currentScreen === 'edit') && renderFormScreen()}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
+  errorText: {
+    ...typography.h3,
+    color: colors.error,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    paddingTop: spacing.lg,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceLight,
+  },
+  headerTitle: {
+    ...typography.h1,
+    color: colors.text,
+  },
+  headerSubtitle: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  sampleButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  sampleButtonText: {
+    ...typography.bodySmall,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceLight,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: colors.primary,
+  },
+  tabText: {
+    ...typography.body,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: colors.primary,
+  },
+  screenContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  chartTypeSelector: {
+    flexDirection: 'row',
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  chartTypeButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  chartTypeButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryLight,
+  },
+  chartTypeText: {
+    ...typography.body,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  chartTypeTextActive: {
+    color: colors.text,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xxl,
+    marginTop: spacing.xxl,
+  },
+  emptyStateTitle: {
+    ...typography.h2,
+    color: colors.text,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    right: spacing.lg,
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.lg,
+  },
+  fabText: {
+    fontSize: 32,
+    color: colors.text,
+    fontWeight: '300',
+  },
+});
