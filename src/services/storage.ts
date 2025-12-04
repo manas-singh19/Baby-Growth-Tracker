@@ -186,11 +186,16 @@ export async function generateSampleData(count: number = 20): Promise<void> {
   const profile = data.profile;
 
   const measurements: GrowthMeasurement[] = [];
-  const startDate = new Date(profile.birthDate);
+  const birthDate = new Date(profile.birthDate);
+  const today = new Date();
+  const maxAgeInDays = Math.min(
+    Math.floor((today.getTime() - birthDate.getTime()) / (24 * 60 * 60 * 1000)),
+    730
+  ); // Max 2 years or baby's current age
 
   for (let i = 0; i < count; i++) {
-    const daysOffset = Math.floor((i / count) * 730); // Spread over 2 years
-    const measurementDate = new Date(startDate.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+    const daysOffset = Math.floor((i / count) * maxAgeInDays);
+    const measurementDate = new Date(birthDate.getTime() + daysOffset * 24 * 60 * 60 * 1000);
     const ageInDays = calculateAgeInDays(profile.birthDate, measurementDate.toISOString());
 
     // Generate realistic values with some variation

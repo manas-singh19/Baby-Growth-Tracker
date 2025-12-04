@@ -124,12 +124,7 @@ export default function MeasurementForm({
       };
 
       await saveMeasurement(measurement, profile);
-
-      Alert.alert(
-        'Success',
-        existingMeasurement ? 'Measurement updated successfully' : 'Measurement added successfully',
-        [{ text: 'OK', onPress: onSuccess }]
-      );
+      onSuccess();
     } catch {
       Alert.alert('Error', 'Failed to save measurement. Please try again.');
     } finally {
@@ -328,11 +323,15 @@ export default function MeasurementForm({
           {errors.height && <Text style={styles.errorText}>{errors.height.message}</Text>}
         </View>
 
+        
+
         {/* Head Circumference Input */}
-        <View style={styles.inputGroup}>
-          <View style={styles.labelRow}>
+        <View style={styles.inputGroup}>  
+           <View style={styles.labelRow}>
             <Text style={styles.label}>Head Circumference</Text>
-            <Text style={styles.unitLabel}>{lengthUnit}</Text>
+            <TouchableOpacity style={styles.unitToggle} onPress={toggleLengthUnit}>
+              <Text style={styles.unitToggleText}>{lengthUnit}</Text>
+            </TouchableOpacity>
           </View>
           <Controller
             control={control}
@@ -353,6 +352,8 @@ export default function MeasurementForm({
           />
           {errors.head && <Text style={styles.errorText}>{errors.head.message}</Text>}
         </View>
+
+        
 
         {/* Action Buttons */}
         <View style={styles.buttonRow}>
