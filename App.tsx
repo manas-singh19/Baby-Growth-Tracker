@@ -41,7 +41,7 @@ function AppContent() {
 
   useEffect(() => {
     loadAppData();
-  }, []);
+  }, [loadAppData]);
 
   useEffect(() => {
     Animated.parallel([
@@ -59,7 +59,7 @@ function AppContent() {
     ]).start();
   }, [currentScreen]);
 
-  const loadAppData = async () => {
+  const loadAppData = useCallback(async () => {
     try {
       const data = await loadData();
       setProfile(data.profile);
@@ -69,7 +69,7 @@ function AppContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleAddMeasurement = useCallback(() => {
     setSelectedMeasurement(null);
@@ -82,20 +82,26 @@ function AppContent() {
     setCurrentScreen('edit');
   }, [currentScreen]);
 
-  const handleDeleteMeasurement = useCallback(async (id: string) => {
-    try {
-      await deleteMeasurementFromStorage(id);
-      await loadAppData();
-    } catch {
-      Alert.alert('Error', 'Failed to delete measurement.');
-    }
-  }, []);
+  const handleDeleteMeasurement = useCallback(
+    async (id: string) => {
+      try {
+        await deleteMeasurementFromStorage(id);
+        await loadAppData();
+      } catch {
+        Alert.alert('Error', 'Failed to delete measurement.');
+      }
+    },
+    [loadAppData]
+  );
 
-  const handleFormSuccess = useCallback(async () => {
-    await loadAppData();
-    setCurrentScreen(previousScreen);
-    setSelectedMeasurement(null);
-  }, [previousScreen]);
+  const handleFormSuccess = useCallback(
+    async () => {
+      await loadAppData();
+      setCurrentScreen(previousScreen);
+      setSelectedMeasurement(null);
+    },
+    [previousScreen, loadAppData]
+  );
 
   const handleFormCancel = useCallback(() => {
     setCurrentScreen(previousScreen);
