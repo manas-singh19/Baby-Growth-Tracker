@@ -39,6 +39,18 @@ function AppContent() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(300));
 
+  const loadAppData = useCallback(async () => {
+    try {
+      const data = await loadData();
+      setProfile(data.profile);
+      setMeasurements(data.measurements);
+    } catch {
+      Alert.alert('Error', 'Failed to load data. Please restart the app.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadAppData();
   }, [loadAppData]);
@@ -58,18 +70,6 @@ function AppContent() {
       }),
     ]).start();
   }, [currentScreen]);
-
-  const loadAppData = useCallback(async () => {
-    try {
-      const data = await loadData();
-      setProfile(data.profile);
-      setMeasurements(data.measurements);
-    } catch {
-      Alert.alert('Error', 'Failed to load data. Please restart the app.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   const handleAddMeasurement = useCallback(() => {
     setSelectedMeasurement(null);
@@ -130,6 +130,53 @@ function AppContent() {
     );
   };
 
+  const handlePerformanceTest = () => {
+    Alert.alert(
+      'Performance Test',
+      'This will seed 60 measurements and measure chart render time. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Run Test',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              console.log('[Performance Test] Starting...');
+              
+              const seedStart = performance.now();
+              await generateSampleData(60);
+              const seedEnd = performance.now();
+              const seedTime = seedEnd - seedStart;
+              console.log(`[Performance Test] Seeded 60 entries in ${seedTime.toFixed(2)}ms`);
+              
+              // Load data and measure total time
+              const loadStart = performance.now();
+              await loadAppData();
+              const loadEnd = performance.now();
+              
+              setLoading(false);
+              
+              // Give chart time to render, then show results
+              setTimeout(() => {
+                const totalTime = loadEnd - seedStart;
+                Alert.alert(
+                  'Performance Test Complete',
+                  `✅ Seeded 60 entries in ${seedTime.toFixed(0)}ms\n` +
+                  `✅ Total time: ${totalTime.toFixed(0)}ms\n\n` +
+                  `Check console for chart paint time.\n` +
+                  `Target: <500ms on simulator`
+                );
+              }, 500);
+            } catch (error) {
+              setLoading(false);
+              Alert.alert('Error', 'Failed to run performance test.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -155,11 +202,18 @@ function AppContent() {
           {profile.gender === 'male' ? '👶 Boy' : '👶 Girl'} • WHO Standards
         </Text>
       </TouchableOpacity>
-      {currentScreen === 'charts' && measurements.length === 0 && (
-        <TouchableOpacity style={styles.sampleButton} onPress={handleGenerateSampleData}>
-          <Text style={styles.sampleButtonText}>📊 Demo</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.headerButtons}>
+        {currentScreen === 'charts' && measurements.length === 0 && (
+          <TouchableOpacity style={styles.sampleButton} onPress={handleGenerateSampleData}>
+            <Text style={styles.sampleButtonText}>📊 Demo</Text>
+          </TouchableOpacity>
+        )}
+        {/* {currentScreen === 'charts' && (
+          <TouchableOpacity style={styles.perfButton} onPress={handlePerformanceTest}>
+            <Text style={styles.perfButtonText}>⚡</Text>
+          </TouchableOpacity>
+        )} */}
+      </View>
     </View>
   );
 
@@ -410,6 +464,10 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: spacing.xs,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   sampleButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
@@ -420,6 +478,17 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.text,
     fontWeight: '600',
+  },
+  perfButton: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  perfButtonText: {
+    fontSize: 16,
   },
   tabBar: {
     flexDirection: 'row',

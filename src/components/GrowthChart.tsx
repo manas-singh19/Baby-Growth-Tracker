@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { GrowthMeasurement, MeasurementType } from '../types';
@@ -18,6 +18,38 @@ const PERCENTILES = [3, 10, 25, 50, 75, 90, 97];
 
 export default function GrowthChart({ measurements, gender, type, unit }: GrowthChartProps) {
   const [selectedPoint, setSelectedPoint] = useState<GrowthMeasurement | null>(null);
+  const renderStartTime = useRef<number>(performance.now());
+  const previousMeasurementCount = useRef<number>(0);
+
+  // Track when measurements change significantly (e.g., performance test)
+  useEffect(() => {
+    const currentCount = measurements.length;
+    const countDiff = Math.abs(currentCount - previousMeasurementCount.current);
+    
+    // If measurements increased by 50+ (performance test), reset timer
+    if (countDiff >= 50) {
+      renderStartTime.current = performance.now();
+      console.log(`[Performance] Starting measurement for ${currentCount} measurements...`);
+    }
+    
+    previousMeasurementCount.current = currentCount;
+  }, [measurements.length]);
+
+  // Measure paint time after render
+  useEffect(() => {
+    if (measurements.length >= 50) {
+      // Use setTimeout to measure after paint
+      const timer = setTimeout(() => {
+        const paintTime = performance.now() - renderStartTime.current;
+        const passed = paintTime < 500;
+        console.log(
+          `[Performance] GrowthChart first paint: ${paintTime.toFixed(2)}ms ${passed ? '✅' : '❌'} (${measurements.length} measurements)`
+        );
+      }, 0);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [measurements]);
 
   // Get percentile curves
   const curves = PERCENTILES.map(p => ({
