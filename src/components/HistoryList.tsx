@@ -74,20 +74,20 @@ export default function HistoryList({
       <View style={styles.measurements}>
         <View style={styles.measurementItem}>
           <Text style={styles.measurementLabel}>Weight</Text>
-          <Text style={styles.measurementValue}>{formatWeight(item.weightKg, weightUnit)}</Text>
-          {renderPercentile(item.weightPercentile)}
+          <Text style={styles.measurementValue}>{formatWeight(item.weightKg, weightUnit)} {renderPercentile(item.weightPercentile)}</Text>
+          
         </View>
 
         <View style={styles.measurementItem}>
           <Text style={styles.measurementLabel}>Height</Text>
-          <Text style={styles.measurementValue}>{formatHeight(item.heightCm, lengthUnit)}</Text>
-          {renderPercentile(item.heightPercentile)}
+          <Text style={styles.measurementValue}>{formatHeight(item.heightCm, lengthUnit)} {renderPercentile(item.heightPercentile)}</Text>
+          
         </View>
 
         <View style={styles.measurementItem}>
           <Text style={styles.measurementLabel}>Head</Text>
-          <Text style={styles.measurementValue}>{formatHeight(item.headCm, lengthUnit)}</Text>
-          {renderPercentile(item.headPercentile)}
+          <Text style={styles.measurementValue}>{formatHeight(item.headCm, lengthUnit)}   {renderPercentile(item.headPercentile)}</Text>
+        
         </View>
       </View>
     </View>
